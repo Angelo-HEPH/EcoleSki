@@ -14,6 +14,9 @@ public abstract class Person {
 	protected int age;
 	
 	// Constructor
+	
+	public Person() {}
+	
 	public Person(int id, String firstName, String lastName, String email,
 			String street, int streetNumber, String city, String phoneNumber, int age) {
 		this.id = id;
