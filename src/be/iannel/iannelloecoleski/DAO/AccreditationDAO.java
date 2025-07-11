@@ -7,11 +7,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import be.iannel.iannelloecoleski.DAO.interfaceDAO.AccreditationDAOInterface;
 import be.iannel.iannelloecoleski.DAO.interfaceDAO.InterfaceDAO;
 import be.iannel.iannelloecoleski.models.Accreditation;
 import be.iannel.iannelloecoleski.models.Instructor;
 
-public class AccreditationDAO implements InterfaceDAO<Accreditation>{
+public class AccreditationDAO implements AccreditationDAOInterface{
 
 	private Connection connection;
 	

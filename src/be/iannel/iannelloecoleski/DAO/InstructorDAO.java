@@ -32,7 +32,7 @@ public class InstructorDAO implements InstructorDAOInterface {
 	    String sql = "INSERT INTO instructor (FIRSTNAME, LASTNAME, EMAIL, PHONENUMBER, AGE, STREET, STREETNUMBER, CITY) " +
 	                       "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-	    try (PreparedStatement Stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+	    try (PreparedStatement Stmt = connection.prepareStatement(sql)) {
 	        Stmt.setString(1, instructor.getFirstName());
 	        Stmt.setString(2, instructor.getLastName());
 	        Stmt.setString(3, instructor.getEmail());
