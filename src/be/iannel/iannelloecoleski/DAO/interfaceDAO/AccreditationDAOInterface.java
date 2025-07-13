@@ -7,5 +7,5 @@ import be.iannel.iannelloecoleski.models.Instructor;
 
 public interface AccreditationDAOInterface extends InterfaceDAO<Accreditation>{
 	List<Accreditation> getAccreditationsByInstructorId(int instructorId);
-	List<Instructor> getInstructorsByAccreditationId(int accreditationId);
+	Accreditation getAccreditationByLessonTypeId(int lessonTypeId);
 }

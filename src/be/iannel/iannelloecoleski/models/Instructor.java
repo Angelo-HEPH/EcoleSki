@@ -1,75 +1,100 @@
 package be.iannel.iannelloecoleski.models;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import be.iannel.iannelloecoleski.DAO.AccreditationDAO;
 import be.iannel.iannelloecoleski.DAO.InstructorDAO;
+import be.iannel.iannelloecoleski.DAO.LessonDAO;
 
 public class Instructor extends Person {
 
-	private List<Accreditation> accreditations;
-	private InstructorDAO instructorDAO;
-	
-	private InstructorDAO initDAO() {
-		Connection connection = ConnectionBdd.getInstance();
-		return new InstructorDAO(connection);
-	}
-	
-	public Instructor() {
-		super();
-		this.instructorDAO = initDAO();
-		accreditations = new ArrayList<Accreditation>();
-	}
-	
-	//Constructeur sans id
-	public Instructor(String firstName, String lastName, String email,
-			String street, int streetNumber, String city, String phoneNumber, int age, Accreditation accreditation) {
-		super(0,firstName,lastName,email,street,streetNumber,city,phoneNumber,age);
-		
-		this.instructorDAO = initDAO();
-		accreditations = new ArrayList<Accreditation>();
-		
-		if(accreditation == null) {
-			throw new IllegalArgumentException("Un instructeur doit avoir au moins une accréditation.");
-		}
-		
-		accreditations.add(accreditation);
-	}
-	
-	//Constructeur avec id
-	public Instructor(int id, String firstName, String lastName, String email,
-			String street, int streetNumber, String city, String phoneNumber, int age, Accreditation accreditation) {
-		super(id, firstName, lastName, email, street, streetNumber, city, phoneNumber, age);
-		
-		this.instructorDAO = initDAO();
-		accreditations = new ArrayList<Accreditation>();
-		
-		if(accreditation == null) {
-			throw new IllegalArgumentException("Un instructeur doit avoir au moins une accréditation.");
-		}
-		
-		accreditations.add(accreditation);
-	}
+    private List<Accreditation> accreditations;
+    private List<Lesson> lessons;
+
+    public Instructor() {
+        super();
+        accreditations = new ArrayList<>();
+        lessons = new ArrayList<>();
+    }
+
+    // Constructeur sans ID
+    public Instructor(String firstName, String lastName, String email,
+                      String street, int streetNumber, String city,
+                      String phoneNumber, int age, Accreditation accreditation) {
+
+        super(0, firstName, lastName, email, street, streetNumber, city, phoneNumber, age);
+
+        accreditations = new ArrayList<>();
+        lessons = new ArrayList<>();
+        
+        if (accreditation == null) {
+            throw new IllegalArgumentException("Un instructeur doit avoir au moins une accréditation.");
+        }
+
+        accreditations.add(accreditation);
+    }
+
+    // Constructeur avec ID
+    public Instructor(int id, String firstName, String lastName, String email,
+                      String street, int streetNumber, String city,
+                      String phoneNumber, int age, Accreditation accreditation) {
+
+        super(id, firstName, lastName, email, street, streetNumber, city, phoneNumber, age);
+
+        accreditations = new ArrayList<>();
+        lessons = new ArrayList<>();
+
+        if (accreditation == null) {
+            throw new IllegalArgumentException("Un instructeur doit avoir au moins une accréditation.");
+        }
+
+        accreditations.add(accreditation);
+    }
 	
 	//Méthodes
-	public boolean addInstructor() {
+    public void loadRelations(AccreditationDAO accreditationDAO, LessonDAO lessonDAO) {
+        if (this.id <= 0) {
+            System.out.println("Impossible de charger les relations : id invalide");
+            return;
+        }
+        
+        List<Accreditation> loadedAccreditations = accreditationDAO.getAccreditationsByInstructorId(this.id);
+        this.accreditations.addAll(loadedAccreditations);
+
+        List<Lesson> loadedLessons = lessonDAO.getLessonsByInstructorId(this.id);
+        for (Lesson lesson : loadedLessons) {
+            lesson.setInstructor(this);
+            this.lessons.add(lesson);
+        }
+    }
+
+	public boolean addInstructor(InstructorDAO instructorDAO) {
 		return instructorDAO.create(this);
 	}
-	
-	public Instructor getInstructorById(int id) {
-		if(id <= 0) {
-			System.out.println("Id plus petit ou égal à 0.");
-			return null;
-		}
-		return instructorDAO.read(id);
+    
+	public static Instructor getInstructorById(int id, InstructorDAO instructorDAO, AccreditationDAO accreditationDAO, LessonDAO lessonDAO) {
+	    if (id <= 0) {
+	        System.out.println("Id plus petit ou égal à 0.");
+	        return null;
+	    }
+	    Instructor instructor = instructorDAO.read(id);
+	    if (instructor != null) {
+	        instructor.loadRelations(accreditationDAO, lessonDAO);
+	    }
+	    return instructor;
 	}
-	
-	public List<Instructor> getAllInstructors(){
-		return instructorDAO.readAll();
+
+	public static List<Instructor> getAllInstructors(InstructorDAO instructorDAO, AccreditationDAO accreditationDAO, LessonDAO lessonDAO) {
+	    List<Instructor> instructors = instructorDAO.readAll();
+	    for (Instructor instructor : instructors) {
+	        instructor.loadRelations(accreditationDAO, lessonDAO);
+	    }
+	    return instructors;
 	}
+
 	
-	public boolean deleteInstructorById(int id) {
+	public boolean deleteInstructorById(int id, InstructorDAO instructorDAO) {
 		if(id <= 0) {
 			System.out.println("Id plus petit ou égal à 0.");
 			return false;
@@ -85,6 +110,17 @@ public class Instructor extends Person {
 	
 	public List<Accreditation> getAccreditations(){
 		return accreditations;
+	}
+	
+	public void addLesson(Lesson lesson) {
+		if(!lessons.contains(lesson)) {
+			lessons.add(lesson);
+			lesson.setInstructor(this);
+		}
+	}
+	
+	public List<Lesson> getLessons(){
+		return lessons;
 	}
 	
 	@Override

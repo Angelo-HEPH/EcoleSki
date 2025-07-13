@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,11 +14,9 @@ import be.iannel.iannelloecoleski.models.Instructor;
 public class InstructorDAO implements InstructorDAOInterface {
 
 	private Connection connection;
-	private AccreditationDAO accreditationDAO;
 	
 	public InstructorDAO(Connection connection) {
 		this.connection = connection;
-		this.accreditationDAO = new AccreditationDAO(connection);
 	}
 	
 	@Override
@@ -30,24 +27,26 @@ public class InstructorDAO implements InstructorDAOInterface {
 	    }
 
 	    String sql = "INSERT INTO instructor (FIRSTNAME, LASTNAME, EMAIL, PHONENUMBER, AGE, STREET, STREETNUMBER, CITY) " +
-	                       "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+	                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-	    try (PreparedStatement Stmt = connection.prepareStatement(sql)) {
-	        Stmt.setString(1, instructor.getFirstName());
-	        Stmt.setString(2, instructor.getLastName());
-	        Stmt.setString(3, instructor.getEmail());
-	        Stmt.setString(4, instructor.getPhoneNumber());
-	        Stmt.setInt(5, instructor.getAge());
-	        Stmt.setString(6, instructor.getStreet());
-	        Stmt.setInt(7, instructor.getStreetNumber());
-	        Stmt.setString(8, instructor.getCity());
+	    try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+	        stmt.setString(1, instructor.getFirstName());
+	        stmt.setString(2, instructor.getLastName());
+	        stmt.setString(3, instructor.getEmail());
+	        stmt.setString(4, instructor.getPhoneNumber());
+	        stmt.setInt(5, instructor.getAge());
+	        stmt.setString(6, instructor.getStreet());
+	        stmt.setInt(7, instructor.getStreetNumber());
+	        stmt.setString(8, instructor.getCity());
 
-	        int rowsAffected = Stmt.executeUpdate();
+	        int rowsAffected = stmt.executeUpdate();
 
 	        if (rowsAffected > 0) {
-	        	String selectSql = "SELECT ID FROM instructor WHERE EMAIL = ?";
-	        	try (PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
+	            String selectSql = "SELECT ID FROM instructor WHERE EMAIL = ?";
+
+	            try (PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
 	                selectStmt.setString(1, instructor.getEmail());
+
 	                try (ResultSet rs = selectStmt.executeQuery()) {
 	                    if (rs.next()) {
 	                        int id = rs.getInt("ID");
@@ -67,9 +66,11 @@ public class InstructorDAO implements InstructorDAOInterface {
 	        } else {
 	            System.out.println("Aucune ligne insérée.");
 	        }
+
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	    }
+
 	    return false;
 	}
 
@@ -87,85 +88,67 @@ public class InstructorDAO implements InstructorDAOInterface {
 	
 	@Override
 	public Instructor read(int id) {
-		Instructor instructor = null;
-		String sql = "SELECT * FROM instructor WHERE id = ?";
-		
-		try(PreparedStatement stmt = connection.prepareStatement(sql)){
-			stmt.setInt(1,id);
-			ResultSet rs = stmt.executeQuery();
-			
-			if(rs.next()) {
-				List<Accreditation> accreditations = accreditationDAO.getAccreditationsByInstructorId(id);
-				
-				if(accreditations.isEmpty()) {
-					throw new IllegalArgumentException("L'instructeur doit avoir au moins une accreditation.");
-				}
-				
-				instructor = new Instructor(
-						rs.getInt("ID"),
-						rs.getString("FIRSTNAME"),
-						rs.getString("LASTNAME"),
-						rs.getString("EMAIL"),
-						rs.getString("STREET"),
-						rs.getInt("STREETNUMBER"),
-						rs.getString("CITY"),
-						rs.getString("PHONENUMBER"),
-						rs.getInt("AGE"),
-						accreditations.get(0)
-						);
-				
-				for(int i = 1; i <accreditations.size(); i++) {
-					instructor.addAccreditation(accreditations.get(i));
-				}
-			}
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
-		return instructor;
-	}
-	
-	@Override
-	public List<Instructor> readAll(){
-		List<Instructor> instructors = new ArrayList<>();
-		String sql = "SELECT * FROM instructor";
-		
-		try(PreparedStatement stmt = connection.prepareStatement(sql)){
-			ResultSet rs = stmt.executeQuery();
-			
-			while(rs.next()) {
-				int id = rs.getInt("ID");
-				
-				List<Accreditation> accreditations = accreditationDAO.getAccreditationsByInstructorId(id);
-				
-				if(accreditations.isEmpty()) {
-					System.out.println("L'instructeur avec l'id" + id + "n'a aucune accrédiation.");
-					continue;
-				}
-				
-				Instructor instructor = new Instructor(
-						rs.getInt("ID"),
-						rs.getString("FIRSTNAME"),
-						rs.getString("LASTNAME"),
-						rs.getString("EMAIL"),
-						rs.getString("STREET"),
-						rs.getInt("STREETNUMBER"),
-						rs.getString("CITY"),
-						rs.getString("PHONENUMBER"),
-						rs.getInt("AGE"),
-						accreditations.get(0)
-						);
+	    Instructor instructor = null;
+	    String sql = "SELECT * FROM instructor WHERE id = ?";
 
-				for(int i = 1; i < accreditations.size(); i++) {
-					instructor.addAccreditation(accreditations.get(i));
-				}
-				
-				instructors.add(instructor);
-			}
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
-		return instructors;
+	    try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+	        stmt.setInt(1, id);
+	        ResultSet rs = stmt.executeQuery();
+
+	        if (rs.next()) {
+	        	Accreditation acc = new Accreditation(0, null);
+	        	
+	            instructor = new Instructor(
+	                rs.getInt("ID"),
+	                rs.getString("FIRSTNAME"),
+	                rs.getString("LASTNAME"),
+	                rs.getString("EMAIL"),
+	                rs.getString("STREET"),
+	                rs.getInt("STREETNUMBER"),
+	                rs.getString("CITY"),
+	                rs.getString("PHONENUMBER"),
+	                rs.getInt("AGE"),
+	                acc
+	            );
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return instructor;
 	}
+
+	@Override
+	public List<Instructor> readAll() {
+	    List<Instructor> instructors = new ArrayList<>();
+	    String sql = "SELECT * FROM instructor";
+
+	    try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+	        ResultSet rs = stmt.executeQuery();
+
+	        while (rs.next()) {
+	        	Accreditation acc = new Accreditation(0, null);
+	        	
+	            Instructor instructor = new Instructor(
+	                rs.getInt("ID"),
+	                rs.getString("FIRSTNAME"),
+	                rs.getString("LASTNAME"),
+	                rs.getString("EMAIL"),
+	                rs.getString("STREET"),
+	                rs.getInt("STREETNUMBER"),
+	                rs.getString("CITY"),
+	                rs.getString("PHONENUMBER"),
+	                rs.getInt("AGE"),
+	                acc
+	            );
+
+	            instructors.add(instructor);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return instructors;
+	}
+
 	
 	@Override
 	public boolean delete(int id) {
@@ -174,8 +157,8 @@ public class InstructorDAO implements InstructorDAOInterface {
 		try(PreparedStatement stmt = connection.prepareStatement(sql)){
 			stmt.setInt(1, id);
 			int rowsAffected = stmt.executeUpdate();
-			
 			return rowsAffected > 0;	
+			
 		} catch(SQLException e) {
 			e.printStackTrace();
 			return false;
@@ -198,4 +181,41 @@ public class InstructorDAO implements InstructorDAOInterface {
 		}
 		return false;
 	}
+	
+	@Override
+	public List<Instructor> getInstructorsByAccreditationId(int accreditationId) {
+	    List<Instructor> instructors = new ArrayList<>();
+
+	    String sql = "SELECT i.* FROM instructor i " +
+	                 "JOIN instructor_accreditation ia ON i.id = ia.instructorId " +
+	                 "WHERE ia.accreditationId = ?";
+
+	    try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+	        stmt.setInt(1, accreditationId);
+	        ResultSet rs = stmt.executeQuery();
+
+	        while (rs.next()) {
+	            Accreditation acc = new Accreditation(accreditationId, null);
+
+	            Instructor instructor = new Instructor(
+	                rs.getInt("ID"),
+	                rs.getString("FIRSTNAME"),
+	                rs.getString("LASTNAME"),
+	                rs.getString("EMAIL"),
+	                rs.getString("STREET"),
+	                rs.getInt("STREETNUMBER"),
+	                rs.getString("CITY"),
+	                rs.getString("PHONENUMBER"),
+	                rs.getInt("AGE"),
+	                acc
+	            );
+
+	            instructors.add(instructor);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return instructors;
+	}
+
 }
