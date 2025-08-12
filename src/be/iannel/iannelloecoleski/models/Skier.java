@@ -29,8 +29,7 @@ public class Skier extends Person{
 	
 	public static Skier getSkierById(int id, SkierDAO skierDAO) {
 		if(id <= 0) {
-			System.out.println("Id plus petit ou égal à 0.");
-			return null;
+			throw new IllegalArgumentException("Id plus petit ou égal à 0");
 		}
 		return skierDAO.read(id);
 	}
@@ -41,8 +40,7 @@ public class Skier extends Person{
 	
 	public boolean deleteSkierById(int id, SkierDAO skierDAO) {
 		if(id <= 0) {
-			System.out.println("Id plus petit ou égal à 0.");
-			return false;
+			throw new IllegalArgumentException("Id plus petit ou égal à 0");
 		}
 		return skierDAO.delete(id);
 	}

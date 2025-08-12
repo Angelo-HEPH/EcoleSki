@@ -160,10 +160,9 @@ public class Lesson {
     }
     
     public static Lesson getLessonById(int id, LessonDAO lessonDAO, InstructorDAO instructorDAO) {
-        if (id <= 0) {
-            System.out.println("Id plus petit ou égal à 0.");
-            return null;
-        }
+		if(id <= 0) {
+			throw new IllegalArgumentException("Id plus petit ou égal à 0");
+		}
         Lesson lesson = lessonDAO.read(id);
         if (lesson != null && lesson.getInstructor() != null) {
             Instructor instructor = instructorDAO.read(lesson.getInstructor().getId());
@@ -184,17 +183,16 @@ public class Lesson {
     }
     
     public static boolean deleteLessonById(int id, LessonDAO lessonDAO) {
-        if (id <= 0) {
-            System.out.println("Id plus petit ou égal à 0.");
-            return false;
-        }
+		if(id <= 0) {
+			throw new IllegalArgumentException("Id plus petit ou égal à 0");
+		}
         return lessonDAO.delete(id);
     }
     
     public static List<Lesson> getLessonsByInstructorId(int id, LessonDAO lessonDAO){
-    	if(id <= 0) {
-    		return null;
-    	}
+		if(id <= 0) {
+			throw new IllegalArgumentException("Id plus petit ou égal à 0");
+		}
     	return lessonDAO.getLessonsByInstructorId(id);
     }
 }

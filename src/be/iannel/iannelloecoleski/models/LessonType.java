@@ -23,7 +23,6 @@ public class LessonType {
     }
 
     // Getters / Setters 
-
 	public void setId(int id) {
 		this.id = id;
 	}
@@ -39,6 +38,9 @@ public class LessonType {
 	}
 	
 	public void setPricePerWeek(double pricePerWeek) {
+		if(pricePerWeek < 0) {
+			throw new IllegalArgumentException("Le prix ne peut pas être négatif");
+		}
 		this.pricePerWeek = pricePerWeek;
 	}
 	public double getPricePerWeek() {
@@ -67,10 +69,9 @@ public class LessonType {
     //Méthodes
     
     public void loadRelations(AccreditationDAO accreditationDAO) {
-        if (this.id <= 0) {
-            System.out.println("Impossible de charger les relations : ID invalide");
-            return;
-        }
+		if(id <= 0) {
+			throw new IllegalArgumentException("Id plus petit ou égal à 0, impossible de charger les relations");
+		}
 
         Accreditation acc = accreditationDAO.getAccreditationByLessonTypeId(this.id);
         if (acc != null) {
@@ -107,10 +108,9 @@ public class LessonType {
             System.out.println("Erreur : LessonTypeDAO non initialisé !");
             return false;
         }
-        if (id <= 0) {
-            System.out.println("Id plus petit ou égal à 0.");
-            return false;
-        }
+		if(id <= 0) {
+			throw new IllegalArgumentException("Id plus petit ou égal à 0");
+		}
         return lessonTypeDAO.delete(id);
     }
 }

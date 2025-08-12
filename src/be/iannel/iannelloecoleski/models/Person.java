@@ -76,6 +76,9 @@ public abstract class Person {
 	}
 	
 	public void setStreetNumber(int streetNumber) {
+		if(streetNumber <= 0) {
+			throw new IllegalArgumentException("Le numéro de rue doit être positif");
+		}
 		this.streetNumber = streetNumber;
 	}
 	
@@ -100,6 +103,9 @@ public abstract class Person {
 	}
 	
 	public void setAge(int age) {
+		if(age < 0) {
+			throw new IllegalArgumentException("L'âge doit être positif");
+		}
 		this.age = age;
 	}
 }

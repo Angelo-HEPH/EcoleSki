@@ -152,18 +152,26 @@ public class InstructorDAO implements InstructorDAOInterface {
 	
 	@Override
 	public boolean delete(int id) {
-		String sql = "DELETE FROM instructor WHERE id = ?";
-				
-		try(PreparedStatement stmt = connection.prepareStatement(sql)){
-			stmt.setInt(1, id);
-			int rowsAffected = stmt.executeUpdate();
-			return rowsAffected > 0;	
-			
-		} catch(SQLException e) {
-			e.printStackTrace();
-			return false;
-		}
+	    String deleteAccSql = "DELETE FROM instructor_accreditation WHERE instructorId = ?";
+	    String deleteInstructorSql = "DELETE FROM instructor WHERE id = ?";
+
+	    try (
+	        PreparedStatement deleteAccStmt = connection.prepareStatement(deleteAccSql);
+	        PreparedStatement deleteInstructorStmt = connection.prepareStatement(deleteInstructorSql)
+	    ) {
+	        deleteAccStmt.setInt(1, id);
+	        deleteAccStmt.executeUpdate();
+
+	        deleteInstructorStmt.setInt(1, id);
+	        int rowsAffected = deleteInstructorStmt.executeUpdate();
+	        return rowsAffected > 0;
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
 	}
+
 	
 	@Override
 	public boolean existsByEmail(String email) {

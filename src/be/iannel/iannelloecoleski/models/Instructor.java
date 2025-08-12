@@ -55,8 +55,7 @@ public class Instructor extends Person {
 	//Méthodes
     public void loadRelations(AccreditationDAO accreditationDAO, LessonDAO lessonDAO) {
         if (this.id <= 0) {
-            System.out.println("Impossible de charger les relations : id invalide");
-            return;
+            throw new IllegalArgumentException("Id plus petit ou égal à 0, impossible de charger les relations");
         }
         
         List<Accreditation> loadedAccreditations = accreditationDAO.getAccreditationsByInstructorId(this.id);
@@ -74,10 +73,9 @@ public class Instructor extends Person {
 	}
     
 	public static Instructor getInstructorById(int id, InstructorDAO instructorDAO, AccreditationDAO accreditationDAO, LessonDAO lessonDAO) {
-	    if (id <= 0) {
-	        System.out.println("Id plus petit ou égal à 0.");
-	        return null;
-	    }
+        if (id <= 0) {
+            throw new IllegalArgumentException("Id plus petit ou égal à 0");
+        }
 	    Instructor instructor = instructorDAO.read(id);
 	    if (instructor != null) {
 	        instructor.loadRelations(accreditationDAO, lessonDAO);
@@ -95,10 +93,9 @@ public class Instructor extends Person {
 
 	
 	public boolean deleteInstructorById(int id, InstructorDAO instructorDAO) {
-		if(id <= 0) {
-			System.out.println("Id plus petit ou égal à 0.");
-			return false;
-		}
+        if (id <= 0) {
+            throw new IllegalArgumentException("Id plus petit ou égal à 0");
+        }
 		return instructorDAO.delete(id);
 	}
 	
