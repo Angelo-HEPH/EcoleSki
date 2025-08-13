@@ -81,8 +81,7 @@ public class LessonType {
 
     public boolean addLessonType(LessonTypeDAO lessonTypeDAO) {
         if(lessonTypeDAO == null) {
-            System.out.println("Erreur : LessonTypeDAO non initialisé !");
-            return false;
+            throw new IllegalArgumentException("LessonTypeDAO est null");
         }
         return lessonTypeDAO.create(this);
     }

@@ -32,7 +32,7 @@ public class Instructor extends Person {
             throw new IllegalArgumentException("Un instructeur doit avoir au moins une accréditation.");
         }
 
-        accreditations.add(accreditation);
+        addAccreditation(accreditation);
     }
 
     // Constructeur avec ID
@@ -49,7 +49,7 @@ public class Instructor extends Person {
             throw new IllegalArgumentException("Un instructeur doit avoir au moins une accréditation.");
         }
 
-        accreditations.add(accreditation);
+        addAccreditation(accreditation);
     }
 	
 	//Méthodes

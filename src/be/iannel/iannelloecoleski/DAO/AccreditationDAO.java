@@ -6,13 +6,14 @@ import java.util.List;
 
 import be.iannel.iannelloecoleski.DAO.interfaceDAO.AccreditationDAOInterface;
 import be.iannel.iannelloecoleski.models.Accreditation;
+import be.iannel.iannelloecoleski.models.ConnectionBdd;
 
 public class AccreditationDAO implements AccreditationDAOInterface {
 
     private Connection connection;
 
-    public AccreditationDAO(Connection connection) {
-        this.connection = connection;
+    public AccreditationDAO() {
+        this.connection = ConnectionBdd.getInstance();
     }
 
     @Override

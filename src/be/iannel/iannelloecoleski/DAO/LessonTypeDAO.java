@@ -9,6 +9,7 @@ import java.util.List;
 
 import be.iannel.iannelloecoleski.DAO.interfaceDAO.LessonTypeDAOInterface;
 import be.iannel.iannelloecoleski.models.Accreditation;
+import be.iannel.iannelloecoleski.models.ConnectionBdd;
 import be.iannel.iannelloecoleski.models.LessonType;
 
 public class LessonTypeDAO implements LessonTypeDAOInterface {
@@ -16,8 +17,8 @@ public class LessonTypeDAO implements LessonTypeDAOInterface {
     private Connection connection;
 
 
-    public LessonTypeDAO(Connection connection) {
-        this.connection = connection;
+    public LessonTypeDAO() {
+        this.connection = ConnectionBdd.getInstance();
     }
 
     @Override

@@ -9,14 +9,15 @@ import java.util.List;
 
 import be.iannel.iannelloecoleski.DAO.interfaceDAO.InstructorDAOInterface;
 import be.iannel.iannelloecoleski.models.Accreditation;
+import be.iannel.iannelloecoleski.models.ConnectionBdd;
 import be.iannel.iannelloecoleski.models.Instructor;
 
 public class InstructorDAO implements InstructorDAOInterface {
 
 	private Connection connection;
 	
-	public InstructorDAO(Connection connection) {
-		this.connection = connection;
+	public InstructorDAO() {
+		this.connection = ConnectionBdd.getInstance();
 	}
 	
 	@Override

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import be.iannel.iannelloecoleski.DAO.interfaceDAO.LessonDAOInterface;
+import be.iannel.iannelloecoleski.models.ConnectionBdd;
 import be.iannel.iannelloecoleski.models.Instructor;
 import be.iannel.iannelloecoleski.models.Lesson;
 import be.iannel.iannelloecoleski.models.LessonType;
@@ -16,8 +17,8 @@ public class LessonDAO implements LessonDAOInterface{
 
     private Connection connection;
 
-    public LessonDAO(Connection connection) {
-        this.connection = connection;
+    public LessonDAO() {
+        this.connection = ConnectionBdd.getInstance();
     }
 
 	public boolean create(Lesson lesson) {

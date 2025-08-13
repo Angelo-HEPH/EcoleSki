@@ -8,14 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import be.iannel.iannelloecoleski.DAO.interfaceDAO.SkierDAOInterface;
+import be.iannel.iannelloecoleski.models.ConnectionBdd;
 import be.iannel.iannelloecoleski.models.Skier;
 
 public class SkierDAO implements SkierDAOInterface{
 
 	private Connection connection;
 	
-	public SkierDAO(Connection connection) {
-		this.connection = connection;
+	public SkierDAO() {
+        this.connection = ConnectionBdd.getInstance();
 	}
 	
 	@Override

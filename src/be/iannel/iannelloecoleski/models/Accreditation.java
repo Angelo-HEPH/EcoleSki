@@ -11,12 +11,17 @@ public class Accreditation {
 
     private int id;
     private String name;
-    private List<Instructor> instructors = new ArrayList<>();
-    private List<LessonType> lessonTypes = new ArrayList<>();
+    private List<Instructor> instructors;
+    private List<LessonType> lessonTypes;
 
     public Accreditation(int id, String name) {
         this.id = id;
         this.name = name;
+        this.instructors = new ArrayList<>();
+        this.lessonTypes = new ArrayList<>();
+    }
+    
+    public Accreditation() {
         this.instructors = new ArrayList<>();
         this.lessonTypes = new ArrayList<>();
     }
