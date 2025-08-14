@@ -2,11 +2,15 @@ package be.iannel.iannelloecoleski.models;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import be.iannel.iannelloecoleski.DAO.BookingDAO;
 import be.iannel.iannelloecoleski.DAO.InstructorDAO;
 import be.iannel.iannelloecoleski.DAO.LessonDAO;
 import be.iannel.iannelloecoleski.DAO.LessonTypeDAO;
+import be.iannel.iannelloecoleski.DAO.PeriodDAO;
+import be.iannel.iannelloecoleski.DAO.SkierDAO;
 
 public class Lesson {
 
@@ -19,9 +23,14 @@ public class Lesson {
     private int durationMinutes;
     private boolean isPrivate;
 
-    private LessonType lessonType;
+	private LessonType lessonType;
     private Instructor instructor;
+    private List<Booking> bookings;
 
+    public Lesson() {
+        bookings = new ArrayList<>();
+    }
+    
     // Constructeur sans ID
     public Lesson(int minBookings, int maxBookings, LocalDate lessonDate, LocalDateTime startTime,
                   int durationMinutes, boolean isPrivate, LessonType lessonType, Instructor instructor) {
@@ -33,7 +42,8 @@ public class Lesson {
         this.durationMinutes = durationMinutes;
         this.isPrivate = isPrivate;
         this.lessonType = lessonType;
-
+        
+        bookings = new ArrayList<>();
         setInstructor(instructor);
     }
 
@@ -43,25 +53,34 @@ public class Lesson {
 
         this(minBookings, maxBookings, lessonDate, startTime, durationMinutes, isPrivate, lessonType, instructor);
         this.id = id;
+        bookings = new ArrayList<>();
+
     }
 
-    public void loadRelations(InstructorDAO instructorDAO, LessonTypeDAO lessonTypeDAO) {
-        if (this.id <= 0) {
-            System.out.println("Impossible de charger les relations : id invalide");
-            return;
-        }
-
-        // Chargement instructor
-        Instructor loadedInstructor = instructorDAO.read(getInstructor().id);
-        if (loadedInstructor != null) {
-            setInstructor(loadedInstructor);
-        }
-
-        // Chargement lessonType
-        LessonType loadedLessonType = lessonTypeDAO.read(getLessonType().getId());
-        if (loadedLessonType != null) {
-            setLessonType(loadedLessonType);
-        }
+    public void loadRelations(InstructorDAO instructorDAO, LessonTypeDAO lessonTypeDAO,
+            BookingDAO bookingDAO, PeriodDAO periodDAO, SkierDAO skierDAO,
+            InstructorDAO bookingInstructorDAO, LessonDAO lessonDAO) {
+		if (this.id <= 0) {
+		throw new IllegalArgumentException("Impossible de charger les relations : id invalide");
+		}
+		
+		Instructor loadedInstructor = instructorDAO.read(getInstructor().getId());
+		if (loadedInstructor != null) {
+		setInstructor(loadedInstructor);
+		}
+		
+		LessonType loadedLessonType = lessonTypeDAO.read(getLessonType().getId());
+		if (loadedLessonType != null) {
+		setLessonType(loadedLessonType);
+		}
+		
+		List<Booking> loadedBookings = Booking.getBookingsByLessonId(this.id, bookingDAO,
+		                                                   periodDAO, lessonDAO,
+		                                                   skierDAO, bookingInstructorDAO);
+		for (Booking booking : loadedBookings) {
+		booking.setLesson(this);
+		this.bookings.add(booking);
+		}
     }
 
     public void setInstructor(Instructor instructor) {
@@ -155,6 +174,46 @@ public class Lesson {
     	this.lessonType = lessonType;
     }
     
+    public List<Booking> getBookings() {
+		return bookings;
+	}
+
+	public void setBookings(List<Booking> bookings) {
+		this.bookings = bookings;
+	}
+	
+    //Méthodes
+    public boolean canAddBooking() {
+        return bookings == null || bookings.size() < maxBookings;
+    }
+
+    
+    public boolean addBooking(Booking booking) {
+        if (canAddBooking()) {
+
+            bookings.add(booking);
+
+            if (booking.getLesson() != this) {
+                booking.setLesson(this);
+            }
+            return true;
+        } else {
+            throw new IllegalArgumentException("Impossible d'ajouter la réservation : nombre maximum atteint.");
+        }
+    }
+
+    public boolean removeBooking(Booking booking) {
+        if (bookings != null && bookings.contains(booking)) {
+            bookings.remove(booking);
+
+            if (booking.getLesson() == this) {
+                booking.setLesson(null);
+            }
+            return true;
+        }
+        return false;
+    }
+
     public boolean addLesson(LessonDAO lessonDAO) {
         return lessonDAO.create(this);
     }
