@@ -14,6 +14,10 @@ public class Accreditation {
     private List<Instructor> instructors;
     private List<LessonType> lessonTypes;
 
+    private static InstructorDAO instructorDAO = new InstructorDAO();
+    private static AccreditationDAO accreditationDAO = new AccreditationDAO();
+    private static LessonTypeDAO lessonTypeDAO = new LessonTypeDAO();
+    
     public Accreditation(int id, String name) {
         this.id = id;
         this.name = name;
@@ -52,7 +56,7 @@ public class Accreditation {
     }
     
     //Méthodes
-    public void loadRelations(InstructorDAO instructorDAO, LessonTypeDAO lessonTypeDAO) {
+    public void loadRelations() {
 		if(id <= 0) {
 			throw new IllegalArgumentException("Id plus petit ou égal à 0, impossible de charger les relations");
 		}
@@ -68,30 +72,30 @@ public class Accreditation {
         }
     }
     
-    public boolean addAccreditation(AccreditationDAO accreditationDAO) {
+    public boolean addAccreditation() {
         return accreditationDAO.create(this);
     }
     
-    public static Accreditation getAccreditationById(int id, AccreditationDAO accreditationDAO, InstructorDAO instructorDAO, LessonTypeDAO lessonTypeDAO) {
+    public static Accreditation getAccreditationById(int id) {
 		if(id <= 0) {
 			throw new IllegalArgumentException("Id plus petit ou égal à 0");
 		}
         Accreditation accreditation = accreditationDAO.read(id);
         if (accreditation != null) {
-            accreditation.loadRelations(instructorDAO, lessonTypeDAO);
+            accreditation.loadRelations();
         }
         return accreditation;
     }
     
-    public static List<Accreditation> getAllAccreditations(AccreditationDAO accreditationDAO, InstructorDAO instructorDAO, LessonTypeDAO lessonTypeDAO) {
+    public static List<Accreditation> getAllAccreditations() {
         List<Accreditation> accs = accreditationDAO.readAll();
         for (Accreditation acc : accs) {
-            acc.loadRelations(instructorDAO, lessonTypeDAO);
+            acc.loadRelations();
         }
         return accs;
     }
     
-    public boolean deleteAccreditationById(int id, AccreditationDAO accreditationDAO) {
+    public boolean deleteAccreditationById(int id) {
 		if(id <= 0) {
 			throw new IllegalArgumentException("Id plus petit ou égal à 0");
 		}
@@ -111,6 +115,12 @@ public class Accreditation {
             lessonType.setAccreditation(this);
         }
     }
+    
+    @Override
+    public String toString() {
+        return name;
+    }
+
 
 	@Override
 	public int hashCode() {

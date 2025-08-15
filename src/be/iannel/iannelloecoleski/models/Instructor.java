@@ -4,11 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import be.iannel.iannelloecoleski.DAO.AccreditationDAO;
-import be.iannel.iannelloecoleski.DAO.BookingDAO;
 import be.iannel.iannelloecoleski.DAO.InstructorDAO;
 import be.iannel.iannelloecoleski.DAO.LessonDAO;
-import be.iannel.iannelloecoleski.DAO.PeriodDAO;
-import be.iannel.iannelloecoleski.DAO.SkierDAO;
 
 public class Instructor extends Person {
 
@@ -16,6 +13,10 @@ public class Instructor extends Person {
     private List<Lesson> lessons;
     private List<Booking> bookings;
 
+    private static InstructorDAO instructorDAO = new InstructorDAO();
+    private static AccreditationDAO accreditationDAO = new AccreditationDAO();
+    private static LessonDAO lessonDAO = new LessonDAO();
+    
     public Instructor() {
         super();
         accreditations = new ArrayList<>();
@@ -85,8 +86,7 @@ public class Instructor extends Person {
 	}
     
 	//Méthodes
-    public void loadRelations(AccreditationDAO accreditationDAO, LessonDAO lessonDAO, BookingDAO bookingDAO,
-            PeriodDAO periodDAO, SkierDAO skierDAO, InstructorDAO instructorDAO) {
+    public void loadRelations() {
     	
         if (this.id <= 0) {
             throw new IllegalArgumentException("Id plus petit ou égal à 0, impossible de charger les relations");
@@ -101,13 +101,27 @@ public class Instructor extends Person {
             this.lessons.add(lesson);
         }
         
-        List<Booking> loadedBookings = Booking.getBookingsByInstructorId(this.id, bookingDAO,
-                periodDAO, lessonDAO,
-                skierDAO, instructorDAO);
+        List<Booking> loadedBookings = Booking.getBookingsByInstructorId(this.id);
 		for (Booking booking : loadedBookings) {
-		booking.setInstructor(this);
-		this.bookings.add(booking);
-}
+			booking.setInstructor(this);
+			this.bookings.add(booking);
+		}
+    }
+
+    
+    public boolean hasAccreditationFor(LessonType lessonType) {
+        if (lessonType == null || lessonType.getAccreditation() == null) {
+            return false;
+        }
+        if (accreditations == null || accreditations.isEmpty()) {
+            return false;
+        }
+        for (Accreditation acc : accreditations) {
+            if (acc != null && acc.getId() == lessonType.getAccreditation().getId()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean addBooking(Booking booking) {
@@ -133,33 +147,31 @@ public class Instructor extends Person {
     }
 	
     //Méthodes DAO
-	public boolean addInstructor(InstructorDAO instructorDAO) {
+	public boolean addInstructor() {
 		return instructorDAO.create(this);
 	}
     
-	public static Instructor getInstructorById(int id, InstructorDAO instructorDAO, AccreditationDAO accreditationDAO, LessonDAO lessonDAO, BookingDAO bookingDAO,PeriodDAO periodDAO,
-	        SkierDAO skierDAO) {
+	public static Instructor getInstructorById(int id) {
         if (id <= 0) {
             throw new IllegalArgumentException("Id plus petit ou égal à 0");
         }
 	    Instructor instructor = instructorDAO.read(id);
 	    if (instructor != null) {
-	        instructor.loadRelations(accreditationDAO, lessonDAO, bookingDAO, periodDAO, skierDAO, instructorDAO);
+	        instructor.loadRelations();
 	    }
 	    return instructor;
 	}
 
-	public static List<Instructor> getAllInstructors(InstructorDAO instructorDAO, AccreditationDAO accreditationDAO, LessonDAO lessonDAO, BookingDAO bookingDAO,PeriodDAO periodDAO,
-	        SkierDAO skierDAO) {
+	public static List<Instructor> getAllInstructors() {
 	    List<Instructor> instructors = instructorDAO.readAll();
 	    for (Instructor instructor : instructors) {
-	        instructor.loadRelations(accreditationDAO, lessonDAO, bookingDAO, periodDAO, skierDAO, instructorDAO);
+	        instructor.loadRelations();
 	    }
 	    return instructors;
 	}
 
 	
-	public boolean deleteInstructorById(int id, InstructorDAO instructorDAO) {
+	public boolean deleteInstructorById(int id) {
         if (id <= 0) {
             throw new IllegalArgumentException("Id plus petit ou égal à 0");
         }
@@ -173,6 +185,14 @@ public class Instructor extends Person {
 	}
 	
 
+	public void isValid() throws IllegalArgumentException {
+	    if(firstName == null || firstName.isEmpty()) throw new IllegalArgumentException("Prénom obligatoire");
+	    if(lastName == null || lastName.isEmpty()) throw new IllegalArgumentException("Nom obligatoire");
+	    if(age < 18 || age > 100) throw new IllegalArgumentException("Âge invalide");
+	    if(streetNumber <= 0) throw new IllegalArgumentException("Numéro de rue invalide");
+	    if(email == null || !email.contains("@")) throw new IllegalArgumentException("Email invalide");
+	}
+
 	
 	public void addLesson(Lesson lesson) {
 		if(!lessons.contains(lesson)) {
@@ -181,6 +201,16 @@ public class Instructor extends Person {
 		}
 	}
 	
+	@Override
+	public String toString() {
+	    return "ID: " + id +
+	           "\nNom: " + firstName + " " + lastName +
+	           "\nEmail: " + email +
+	           "\nAdresse: " + street + " " + streetNumber + ", " + city +
+	           "\nTéléphone: " + phoneNumber +
+	           "\nÂge: " + age;
+	           }
+
 	
 	@Override
 	public int hashCode() {
@@ -205,5 +235,4 @@ public class Instructor extends Person {
 	           (this.getLastName() != null && this.getLastName().equals(other.getLastName())) &&
 	           (this.getEmail() != null && this.getEmail().equals(other.getEmail()));
 	}
-
 }

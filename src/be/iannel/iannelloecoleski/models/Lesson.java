@@ -5,12 +5,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import be.iannel.iannelloecoleski.DAO.BookingDAO;
 import be.iannel.iannelloecoleski.DAO.InstructorDAO;
 import be.iannel.iannelloecoleski.DAO.LessonDAO;
 import be.iannel.iannelloecoleski.DAO.LessonTypeDAO;
-import be.iannel.iannelloecoleski.DAO.PeriodDAO;
-import be.iannel.iannelloecoleski.DAO.SkierDAO;
 
 public class Lesson {
 
@@ -23,14 +20,19 @@ public class Lesson {
     private int durationMinutes;
     private boolean isPrivate;
 
-	private LessonType lessonType;
+    private LessonType lessonType;
     private Instructor instructor;
     private List<Booking> bookings;
+
+    private static  LessonDAO lessonDAO = new LessonDAO();
+    private static  InstructorDAO instructorDAO = new InstructorDAO();
+    private static  LessonTypeDAO lessonTypeDAO = new LessonTypeDAO();
+
 
     public Lesson() {
         bookings = new ArrayList<>();
     }
-    
+
     // Constructeur sans ID
     public Lesson(int minBookings, int maxBookings, LocalDate lessonDate, LocalDateTime startTime,
                   int durationMinutes, boolean isPrivate, LessonType lessonType, Instructor instructor) {
@@ -42,7 +44,7 @@ public class Lesson {
         this.durationMinutes = durationMinutes;
         this.isPrivate = isPrivate;
         this.lessonType = lessonType;
-        
+
         bookings = new ArrayList<>();
         setInstructor(instructor);
     }
@@ -50,39 +52,31 @@ public class Lesson {
     // Constructeur avec ID
     public Lesson(int id, int minBookings, int maxBookings, LocalDate lessonDate, LocalDateTime startTime,
                   int durationMinutes, boolean isPrivate, LessonType lessonType, Instructor instructor) {
-
         this(minBookings, maxBookings, lessonDate, startTime, durationMinutes, isPrivate, lessonType, instructor);
         this.id = id;
         bookings = new ArrayList<>();
-
     }
 
-    public void loadRelations(InstructorDAO instructorDAO, LessonTypeDAO lessonTypeDAO,
-            BookingDAO bookingDAO, PeriodDAO periodDAO, SkierDAO skierDAO,
-            InstructorDAO bookingInstructorDAO, LessonDAO lessonDAO) {
-		if (this.id <= 0) {
-		throw new IllegalArgumentException("Impossible de charger les relations : id invalide");
-		}
-		
-		Instructor loadedInstructor = instructorDAO.read(getInstructor().getId());
-		if (loadedInstructor != null) {
-		setInstructor(loadedInstructor);
-		}
-		
-		LessonType loadedLessonType = lessonTypeDAO.read(getLessonType().getId());
-		if (loadedLessonType != null) {
-		setLessonType(loadedLessonType);
-		}
-		
-		List<Booking> loadedBookings = Booking.getBookingsByLessonId(this.id, bookingDAO,
-		                                                   periodDAO, lessonDAO,
-		                                                   skierDAO, bookingInstructorDAO);
-		for (Booking booking : loadedBookings) {
-		booking.setLesson(this);
-		this.bookings.add(booking);
-		}
+    public void loadRelations() {
+        if (this.id <= 0) {
+            throw new IllegalArgumentException("Impossible de charger les relations : id invalide");
+        }
+
+        Instructor loadedInstructor = instructorDAO.read(getInstructor().getId());
+        if (loadedInstructor != null) setInstructor(loadedInstructor);
+
+        LessonType loadedLessonType = lessonTypeDAO.read(getLessonType().getId());
+        if (loadedLessonType != null) setLessonType(loadedLessonType);
+
+        this.bookings.clear();
+        List<Booking> loadedBookings = Booking.getBookingsByLessonId(this.id);
+        for (Booking booking : loadedBookings) {
+            booking.setLesson(this);
+            this.bookings.add(booking);
+        }
     }
 
+    // Getter / Setter
     public void setInstructor(Instructor instructor) {
         if (this.instructor != instructor) {
             Instructor oldInstructor = this.instructor;
@@ -213,45 +207,131 @@ public class Lesson {
         }
         return false;
     }
+    
+    public boolean isMorningLesson() {
+        return startTime.getHour() >= 9 && startTime.getHour() < 12;
+    }
 
-    public boolean addLesson(LessonDAO lessonDAO) {
-        return lessonDAO.create(this);
+    public boolean isAfternoonLesson() {
+        return startTime.getHour() >= 14 && startTime.getHour() < 17;
+    }
+
+    public boolean isMiddayLesson() {
+        return startTime.getHour() >= 12 && startTime.getHour() < 14;
+    }
+
+    private boolean isPrivateLessonAllowed(List<Period> periods) {
+        LocalDate today = LocalDate.now();
+        java.time.Period diff = java.time.Period.between(today, lessonDate);
+        int daysUntilLesson = diff.getYears() * 365 + diff.getMonths() * 30 + diff.getDays();
+
+        boolean inSchoolPeriod = Period.isSchoolPeriod(lessonDate, periods);
+
+        if (inSchoolPeriod) {
+            return daysUntilLesson <= 7 && daysUntilLesson >= 0;
+        } else {
+            return daysUntilLesson <= 31 && daysUntilLesson >= 0;
+        }
+    }
+
+    public boolean canBeBookedBy(Skier skier, List<Period> periods) {
+        if (skier.getAge() < 4) return false;
+
+        if (lessonType.isForChildren() && skier.getAge() > 12) return false;
+        if (lessonType.isForAdults() && skier.getAge() <= 12) return false;
+
+        if (!instructor.hasAccreditationFor(lessonType)) return false;
+
+        int currentBookings = (bookings != null) ? bookings.size() : 0;
+        if (isPrivate) {
+            if (currentBookings >= 4) return false;
+        } else {
+            if (currentBookings >= lessonType.getMaxSkier()) return false;
+        }
+
+        if (isPrivate && !isMiddayLesson()) return false;
+        if (!isPrivate && !(isMorningLesson() || isAfternoonLesson())) return false;
+
+        if (isPrivate && !isPrivateLessonAllowed(periods)) return false;
+
+        for (Booking b : skier.getBookings()) {
+            Lesson otherLesson = b.getLesson();
+            if (otherLesson.getLessonDate().equals(this.lessonDate)) {
+                if ((this.isMorningLesson() && otherLesson.isMorningLesson()) ||
+                    (this.isMiddayLesson() && otherLesson.isMiddayLesson()) ||
+                    (this.isAfternoonLesson() && otherLesson.isAfternoonLesson())) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    public boolean isCollectiveLessonValid() {
+        if (isPrivate) return true;
+        int currentBookings = (bookings != null) ? bookings.size() : 0;
+        return currentBookings >= lessonType.getMinSkier();
     }
     
-    public static Lesson getLessonById(int id, LessonDAO lessonDAO, InstructorDAO instructorDAO) {
-		if(id <= 0) {
-			throw new IllegalArgumentException("Id plus petit ou égal à 0");
-		}
+    public int getLessonPrice() {
+        if (isPrivate()) {
+            return getDurationMinutes() <= 60 ? 60 : 90;
+        } else {
+            return (int) Math.round(getLessonType().getPricePerWeek() / 6.0);
+        }
+    }
+
+    public boolean addLesson() {
+        return lessonDAO.create(this);
+    }
+
+    public static Lesson getLessonById(int id) {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Id plus petit ou égal à 0");
+        }
+
         Lesson lesson = lessonDAO.read(id);
-        if (lesson != null && lesson.getInstructor() != null) {
-            Instructor instructor = instructorDAO.read(lesson.getInstructor().getId());
-            lesson.setInstructor(instructor);
+        if (lesson != null) {
+            lesson.loadRelations();
         }
         return lesson;
     }
-    
-    public static List<Lesson> getAllLessons(LessonDAO lessonDAO, InstructorDAO instructorDAO) {
+
+    public static List<Lesson> getAllLessons() {
         List<Lesson> lessons = lessonDAO.readAll();
         for (Lesson lesson : lessons) {
-            if (lesson.getInstructor() != null) {
-                Instructor instructor = instructorDAO.read(lesson.getInstructor().getId());
-                lesson.setInstructor(instructor);
-            }
+            lesson.loadRelations();
         }
         return lessons;
     }
-    
-    public static boolean deleteLessonById(int id, LessonDAO lessonDAO) {
-		if(id <= 0) {
-			throw new IllegalArgumentException("Id plus petit ou égal à 0");
-		}
+
+    public static boolean deleteLessonById(int id) {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Id plus petit ou égal à 0");
+        }
         return lessonDAO.delete(id);
     }
-    
-    public static List<Lesson> getLessonsByInstructorId(int id, LessonDAO lessonDAO){
-		if(id <= 0) {
-			throw new IllegalArgumentException("Id plus petit ou égal à 0");
-		}
-    	return lessonDAO.getLessonsByInstructorId(id);
+
+    public static List<Lesson> getLessonsByInstructorId(int id) {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Id plus petit ou égal à 0");
+        }
+        return lessonDAO.getLessonsByInstructorId(id);
     }
+
+    
+    @Override
+    public String toString() {
+        return "Leçon ID: " + id + "\n" +
+               "Nombres participants: " + minBookings + " - " + maxBookings + "\n" +
+               "Date de la leçon: " + lessonDate + "\n" +
+               "Heure de début: " + (startTime != null ? startTime.toLocalTime() : "Non définie") + "\n" +
+               "Durée (minutes): " + durationMinutes + "\n" +
+               "Privée: " + (isPrivate ? "Oui" : "Non") + "\n" +
+               "Type de leçon: " + (lessonType != null ? lessonType.getName() : "Non défini") + "\n" +
+               "Instructeur: " + (instructor != null ? instructor.getFirstName() + " " + instructor.getLastName() : "Non défini");
+    }
+
+
 }

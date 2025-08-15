@@ -17,6 +17,11 @@ public class Booking {
     private Skier skier;
     private Instructor instructor;
 
+    private static InstructorDAO instructorDAO = new InstructorDAO();
+    private static LessonDAO lessonDAO = new LessonDAO();
+    private static BookingDAO bookingDAO = new BookingDAO();
+    private static PeriodDAO periodDAO = new PeriodDAO();
+    private static SkierDAO skierDAO = new SkierDAO();
     
     public Booking() {
     	
@@ -108,7 +113,7 @@ public class Booking {
     }
     
     //Méthodes
-    public void loadRelations(PeriodDAO periodDAO, LessonDAO lessonDAO, SkierDAO skierDAO, InstructorDAO instructorDAO) {
+    public void loadRelations() {
         if (this.id <= 0) {
             throw new IllegalArgumentException("Id non valide, impossible de charger les relations");
         }
@@ -134,34 +139,59 @@ public class Booking {
         }
     }
     
-    public boolean create(BookingDAO bookingDAO) {
+    public int calculatePrice() {
+        int basePrice = lesson.getLessonPrice();
+
+        if (getHasInsurance()) {
+            basePrice += Math.round(20.0f / 6);
+        }
+
+        if (isFullDayBooking()) {
+            basePrice = Math.round(basePrice * 0.85f);
+        }
+
+        return basePrice;
+    }
+
+    private boolean isFullDayBooking() {
+        List<Booking> allBookings = getSkier().getBookingsForDate(lesson.getLessonDate());
+        boolean hasMorning = false;
+        boolean hasAfternoon = false;
+
+        for (Booking b : allBookings) {
+            if (b.getLesson().isMorningLesson()) hasMorning = true;
+            if (b.getLesson().isAfternoonLesson()) hasAfternoon = true;
+        }
+
+        return hasMorning && hasAfternoon;
+    }
+
+
+    
+    public boolean create() {
         return bookingDAO.create(this);
     }
     
-    public static Booking getBookingById(int id, BookingDAO bookingDAO,
-            PeriodDAO periodDAO, LessonDAO lessonDAO,
-            SkierDAO skierDAO, InstructorDAO instructorDAO) {
+    public static Booking getBookingById(int id) {
     	
 		Booking booking = bookingDAO.read(id);
 		if (booking != null) {
-			booking.loadRelations(periodDAO, lessonDAO, skierDAO, instructorDAO);
+			booking.loadRelations();
 		}
 		return booking;
 	}
 
-    public static List<Booking> getAllBooking(BookingDAO bookingDAO,
-                 PeriodDAO periodDAO, LessonDAO lessonDAO,
-                 SkierDAO skierDAO, InstructorDAO instructorDAO) {
+    public static List<Booking> getAllBooking() {
     	
 		List<Booking> bookings = bookingDAO.readAll();
 		for (Booking booking : bookings) {
-			booking.loadRelations(periodDAO, lessonDAO, skierDAO, instructorDAO);
+			booking.loadRelations();
 		}
 		return bookings;
 	}
 
 
-    public boolean deleteBooking(int id, BookingDAO bookingDAO) {
+    public boolean deleteBooking(int id) {
         Booking booking = bookingDAO.read(id);
         if (booking != null) {
         	bookingDAO.delete(id);
@@ -170,40 +200,49 @@ public class Booking {
         return false;
     }
     
-    public static List<Booking> getBookingsByLessonId(int lessonId, BookingDAO bookingDAO,
-            PeriodDAO periodDAO, LessonDAO lessonDAO, SkierDAO skierDAO, InstructorDAO instructorDAO) {
+    public static List<Booking> getBookingsByLessonId(int lessonId) {
         
         List<Booking> bookings = bookingDAO.getBookingsByLessonId(lessonId);
 
         for (Booking booking : bookings) {
-            booking.loadRelations(periodDAO, lessonDAO, skierDAO, instructorDAO);
+            booking.loadRelations();
         }
 
         return bookings;
     }
 
-    public static List<Booking> getBookingsByInstructorId(int instructorId, BookingDAO bookingDAO,
-            PeriodDAO periodDAO, LessonDAO lessonDAO, SkierDAO skierDAO, InstructorDAO instructorDAO) {
+    public static List<Booking> getBookingsByInstructorId(int instructorId) {
 
         List<Booking> bookings = bookingDAO.getBookingsByInstructorId(instructorId);
 
         for (Booking booking : bookings) {
-            booking.loadRelations(periodDAO, lessonDAO, skierDAO, instructorDAO);
+            booking.loadRelations();
         }
 
         return bookings;
     }
 
-    public static List<Booking> getBookingsBySkierId(int skierId, BookingDAO bookingDAO,
-            PeriodDAO periodDAO, LessonDAO lessonDAO, SkierDAO skierDAO, InstructorDAO instructorDAO) {
+    public static List<Booking> getBookingsBySkierId(int skierId) {
 
         List<Booking> bookings = bookingDAO.getBookingsBySkierId(skierId);
 
         for (Booking booking : bookings) {
-            booking.loadRelations(periodDAO, lessonDAO, skierDAO, instructorDAO);
+            booking.loadRelations();
         }
 
         return bookings;
+    }
+
+    @Override
+    public String toString() {
+        return "Booking {" +
+                "hasInsurance=" + hasInsurance +
+                ", hasDiscount=" + hasDiscount +
+                ", period=" + (period != null ? period.getName() : "null") +
+                ", lessonId=" + (lesson != null ? lesson.getId() : "null") +
+                ", skier=" + (skier != null ? skier.getLastName() : "null") +
+                ", instructor=" + (instructor != null ? instructor.getLastName() : "null") +
+                "}";
     }
 
 }

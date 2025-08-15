@@ -123,18 +123,25 @@ public class LessonDAO implements LessonDAOInterface{
         return lessons;
     }
 
-    public boolean delete(int id) {
-        String sql = "DELETE FROM lesson WHERE ID = ?";
+    public boolean delete(int lessonId) {
+        String deleteBookingSql = "DELETE FROM BOOKING WHERE LESSONID = ?";
+        String deleteLessonSql = "DELETE FROM LESSON WHERE ID = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
+        try (PreparedStatement stmtBooking = connection.prepareStatement(deleteBookingSql);
+             PreparedStatement stmtLesson = connection.prepareStatement(deleteLessonSql)) {
+
+            stmtBooking.setInt(1, lessonId);
+            stmtBooking.executeUpdate();
+
+            stmtLesson.setInt(1, lessonId);
+            return stmtLesson.executeUpdate() > 0;
 
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
+
 
     public List<Lesson> getLessonsByInstructorId(int instructorId) {
         List<Lesson> lessons = new ArrayList<>();
@@ -173,4 +180,44 @@ public class LessonDAO implements LessonDAOInterface{
         }
         return lessons;
     }
+    
+    public List<Lesson> getLessonsByLessonTypeId(int lessonTypeId) {
+        List<Lesson> lessons = new ArrayList<>();
+        String sql = "SELECT * FROM lesson WHERE LESSONTYPEID = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, lessonTypeId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                int instructorId = rs.getInt("INSTRUCTORID");
+
+                LessonType lessonType = new LessonType();
+                lessonType.setId(lessonTypeId);
+
+                Instructor instructor = new Instructor();
+                instructor.setId(instructorId);
+
+                Lesson lesson = new Lesson(
+                    rs.getInt("ID"),
+                    rs.getInt("MINBOOKINGS"),
+                    rs.getInt("MAXBOOKINGS"),
+                    rs.getDate("LESSON_DATE").toLocalDate(),
+                    rs.getTimestamp("START_TIME").toLocalDateTime(),
+                    rs.getInt("DURATION_MINUTES"),
+                    rs.getInt("IS_PRIVATE") == 1,
+                    lessonType,
+                    instructor
+                );
+
+                lessons.add(lesson);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return lessons;
+    }
+
 }

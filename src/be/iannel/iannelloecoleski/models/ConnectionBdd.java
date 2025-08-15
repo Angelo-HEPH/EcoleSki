@@ -45,7 +45,7 @@ public class ConnectionBdd {
 	
 	
 	public static void main(String[] args) {
-		getInstance(); //Test de connexion à la bdd
+		getInstance();
 	}
 
 }

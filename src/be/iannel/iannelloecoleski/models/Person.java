@@ -2,7 +2,6 @@ package be.iannel.iannelloecoleski.models;
 
 public abstract class Person {
 
-	//Attributes
 	protected int id;
 	protected String firstName;
 	protected String lastName;
@@ -14,7 +13,6 @@ public abstract class Person {
 	protected int age;
 	
 	// Constructor
-	
 	public Person() {}
 	
 	public Person(int id, String firstName, String lastName, String email,
@@ -30,7 +28,7 @@ public abstract class Person {
 		this.age = age;
 	}
 	
-	//Get-Set
+	//Get/Set
 	public int getId() {
 		return id;
 	}

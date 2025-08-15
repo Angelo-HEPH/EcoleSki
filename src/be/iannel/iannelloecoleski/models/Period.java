@@ -1,10 +1,12 @@
 package be.iannel.iannelloecoleski.models;
 
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import be.iannel.iannelloecoleski.DAO.BookingDAO;
+import be.iannel.iannelloecoleski.DAO.PeriodDAO;
 
 public class Period {
 	
@@ -16,6 +18,9 @@ public class Period {
 	
 	private List<Booking> bookings;
 	
+    private static BookingDAO bookingDAO = new BookingDAO();
+    private static PeriodDAO periodDAO = new PeriodDAO();
+    
 	public Period() {
 		bookings = new ArrayList<>();
 
@@ -83,6 +88,25 @@ public class Period {
 		this.isVacation = isVacation;
 	}
 	
+	
+	public boolean containsDate(LocalDate date) {
+	    return !date.isBefore(startDate.toLocalDate()) && !date.isAfter(endDate.toLocalDate());
+	}
+
+	public boolean isVacationPeriod() {
+	    return isVacation;
+	}
+
+	public static boolean isSchoolPeriod(LocalDate date, List<Period> periods) {
+	    for (Period period : periods) {
+	        if (period.isVacationPeriod() && period.containsDate(date)) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
+
+	
 	public boolean addBooking(Booking booking) {
         if (booking != null && !bookings.contains(booking)) {
             bookings.add(booking);
@@ -105,7 +129,7 @@ public class Period {
         return false;
     }
 
-    public void loadBookings(BookingDAO bookingDAO) {
+    public void loadBookings() {
         if (this.id <= 0) {
             throw new IllegalArgumentException("Id de période non valide, impossible de charger les bookings.");
         }
@@ -116,6 +140,53 @@ public class Period {
             booking.setPeriod(this);
             this.addBooking(booking);
         }
+    }
+
+    public boolean addPeriod() {
+        if (periodDAO == null) {
+            throw new IllegalArgumentException("PeriodDAO est null");
+        }
+        return periodDAO.create(this);
+    }
+
+    public static Period getPeriodById(int id) {
+        if (periodDAO == null) {
+            throw new IllegalArgumentException("PeriodDAO est null");
+        }
+        Period period = periodDAO.read(id);
+        if (period != null) {
+            period.loadBookings();
+        }
+        return period;
+    }
+
+    public static List<Period> getAllPeriods() {
+        if (periodDAO == null) {
+            throw new IllegalArgumentException("PeriodDAO est null");
+        }
+        List<Period> periods = periodDAO.readAll();
+        for (Period period : periods) {
+            period.loadBookings();
+        }
+        return periods;
+    }
+
+    public boolean deletePeriodById(int id) {
+        if (periodDAO == null) {
+            System.out.println("Erreur : PeriodDAO non initialisé !");
+            return false;
+        }
+        if (id <= 0) {
+            throw new IllegalArgumentException("Id plus petit ou égal à 0");
+        }
+        return periodDAO.delete(id);
+    }
+    
+    @Override
+    public String toString() {
+        return name 
+                + " (Du " + startDate + " au " + endDate + ")"
+                + (isVacation ? " [Vacances]" : " [Semaine scolaire]");
     }
 
 }

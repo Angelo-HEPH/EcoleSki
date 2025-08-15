@@ -6,6 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import be.iannel.iannelloecoleski.DAO.interfaceDAO.BookingDAOInterface;
+import be.iannel.iannelloecoleski.DAO.interfaceDAO.LessonDAOInterface;
 import be.iannel.iannelloecoleski.models.Booking;
 import be.iannel.iannelloecoleski.models.ConnectionBdd;
 import be.iannel.iannelloecoleski.models.Period;
@@ -13,7 +16,7 @@ import be.iannel.iannelloecoleski.models.Lesson;
 import be.iannel.iannelloecoleski.models.Skier;
 import be.iannel.iannelloecoleski.models.Instructor;
 
-public class BookingDAO {
+public class BookingDAO implements BookingDAOInterface{
 
     private Connection connection;
 
